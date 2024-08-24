@@ -26,7 +26,7 @@
 
 ```
 opkg install git git-http curl
-git clone https://github.com/Anonym-tsk/tpws-keenetic.git --depth 1
+git clone https://github.com/Sapfir0/keenetic-opkg --depth 1
 chmod +x ./tpws-keenetic/*.sh
 ./tpws-keenetic/install.sh
 ```

@@ -28,10 +28,13 @@ config_select_arch_func
 
 # Setup local interface
 show_interfaces_func
-config_local_interface_func
+config_interface_func
 
 # Setup working mode
 config_select_mode_func
+
+# Setup IPv6 support
+config_ipv6_func
 
 # Starting Services
 start_func

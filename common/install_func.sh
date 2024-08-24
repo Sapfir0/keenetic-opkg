@@ -4,6 +4,8 @@ CONFDIR=/opt/etc/tpws
 CONFFILE=$CONFDIR/tpws.conf
 LISTFILE=$CONFDIR/user.list
 LISTAUTOFILE=$CONFDIR/auto.list
+LISTEXCLUDEFILE=$CONFDIR/exclude.list
+LISTLOG=/opt/var/log/tpws.log
 TPWS_BIN=/opt/usr/bin/tpws
 INIT_SCRIPT=/opt/etc/init.d/S51tpws
 NETFILTER_SCRIPT=/opt/etc/ndm/netfilter.d/100-tpws.sh
@@ -14,7 +16,7 @@ stop_func() {
   fi
 }
 
-start_func(){
+start_func() {
   if [ -f "$INIT_SCRIPT" ]; then
     $INIT_SCRIPT start
   fi
@@ -52,6 +54,7 @@ remove_all_files_func() {
   rm -f $TPWS_BIN
   rm -f $INIT_SCRIPT
   rm -f $NETFILTER_SCRIPT
+  rm -f $LISTLOG
 }
 
 remove_list_func() {
@@ -61,6 +64,7 @@ remove_list_func() {
     [Yy]* )
       rm -f $LISTFILE
       rm -f $LISTAUTOFILE
+      rm -f $LISTEXCLUDEFILE
       ;;
   esac
 }
@@ -82,8 +86,10 @@ config_copy_files_func() {
   cp -f $HOME_FOLDER/etc/init.d/S51tpws $INIT_SCRIPT
   chmod +x $INIT_SCRIPT
 
-  cp -f $HOME_FOLDER/etc/ndm/netfilter.d/100-tpws.sh $NETFILTER_SCRIPT
-  chmod +x $NETFILTER_SCRIPT
+  if [ -d "/opt/etc/ndm/netfilter.d" ]; then
+    cp -f $HOME_FOLDER/etc/ndm/netfilter.d/100-tpws.sh $NETFILTER_SCRIPT
+    chmod +x $NETFILTER_SCRIPT
+  fi
 
   mkdir -p $CONFDIR
   cp -f $HOME_FOLDER/etc/tpws/tpws.conf $CONFFILE
@@ -97,35 +103,35 @@ config_copy_list_func() {
       [Yy]* )
         cp -f $HOME_FOLDER/etc/tpws/user.list $LISTFILE
         cp -f $HOME_FOLDER/etc/tpws/auto.list $LISTAUTOFILE
+        cp -f $HOME_FOLDER/etc/tpws/exclude.list $LISTEXCLUDEFILE
         ;;
     esac
   else
     cp -f $HOME_FOLDER/etc/tpws/user.list $LISTFILE
     cp -f $HOME_FOLDER/etc/tpws/auto.list $LISTAUTOFILE
+    cp -f $HOME_FOLDER/etc/tpws/exclude.list $LISTEXCLUDEFILE
   fi
 }
 
-config_select_arch_func() {  
+config_select_arch_func() {
   ARCH="mipsel"
   TPWS_URL="https://raw.githubusercontent.com/bol-van/zapret/master/binaries/mips32r1-lsb/tpws"
 
   echo "Selected architecture: $ARCH"
+  mkdir -p /opt/usr/bin
   curl -SL# "$TPWS_URL" -o "$TPWS_BIN"
   chmod +x $TPWS_BIN
 }
 
 config_select_mode_func() {
-  MODE = "list"
+  EXTRA_ARGS="--hostlist=list"
 
-  if [ "$MODE" == "list" ]; then
-    EXTRA_ARGS="--hostlist=$LISTFILE"
-  fi
   echo "Selected mode: $MODE"
 
   sed -i "s#INPUT_EXTRA_ARGS#$EXTRA_ARGS#" $CONFFILE
 }
 
-config_local_interface_func() {
+config_interface_func() {
   if [ -z "$BIND_IFACE" ]; then
     echo -e "\nEnter the local interface name from the list above, e.g. br0 (default) or nwg0"
     echo "You can specify multiple interfaces separated by space, e.g. br0 nwg0"
@@ -137,4 +143,9 @@ config_local_interface_func() {
   echo "Selected interface: $BIND_IFACE"
 
   sed -i "s#INPUT_LOCAL_INTERFACE#$BIND_IFACE#" $CONFFILE
+}
+
+config_ipv6_func() {
+  echo "\nDisabling IPv6 support"
+  sed -i "s#IPV6_ENABLED=1#IPV6_ENABLED=0#" $CONFFILE
 }
